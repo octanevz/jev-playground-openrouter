@@ -1,0 +1,67 @@
+{
+  "name": "Bug report triage",
+  "description": "Severity, priority, component and duplicate detection for a new issue, with existing issues as candidates.",
+  "state": {
+    "new_issue": {
+      "title": "Export to CSV silently drops rows with commas in the description field",
+      "body": "Steps to reproduce:\n1. Create a project with a task whose description contains a comma, e.g. 'Fix login, then deploy'.\n2. Go to Project > Export > CSV.\n3. Open the file.\n\nExpected: all tasks appear, description quoted.\nActual: the task with the comma is missing entirely. No error is shown. Tasks without commas export fine.\n\nThis affects our weekly reporting; we discovered it because the finance team's totals were off.",
+      "environment": {"app_version": "3.14.2", "browser": "Chrome 128", "os": "macOS 14.6", "plan": "Business"},
+      "logs": "[export-worker] 2026-09-18T09:12:44Z WARN csv_writer: row 17 skipped: unexpected delimiter in field 'description'\n[export-worker] 2026-09-18T09:12:44Z INFO export complete: 41 rows written, 1 skipped"
+    },
+    "existing_issues": [
+      {"id": "ISS-2201", "title": "CSV export: dates use US format regardless of workspace locale", "summary": "Exported dates are always MM/DD/YYYY."},
+      {"id": "ISS-2377", "title": "Export to CSV missing tasks that have quotes in the title", "summary": "Tasks whose title contains a double quote are omitted from CSV export without warning."},
+      {"id": "ISS-2410", "title": "PDF export renders emoji as boxes", "summary": "Emoji in task titles show as tofu in exported PDFs."},
+      {"id": "ISS-2455", "title": "Export button disabled for viewers", "summary": "Viewer role cannot trigger any export; request to allow read-only exports."}
+    ]
+  },
+  "questions": {
+    "severity": {
+      "type": "score",
+      "instructions": {"task": "Rate the severity of new_issue.", "note": "Severity is about impact on users, independent of how many users are affected or business urgency."},
+      "criteria": [
+        {"level": "cosmetic", "definition": "Visual or wording issue; no functional impact."},
+        {"level": "minor", "definition": "Functional issue with an easy workaround; minor inconvenience."},
+        {"level": "major", "definition": "Core feature produces wrong results or fails for some inputs; workaround is awkward or requires manual correction."},
+        {"level": "critical", "definition": "Data loss, data corruption, security exposure, or a core feature unusable for many users."},
+        {"level": "blocker", "definition": "Service down, cannot log in, or data actively being destroyed; must be fixed before anything else ships."}
+      ]
+    },
+    "has_repro_steps": {
+      "type": "noul",
+      "instructions": "Does new_issue contain concrete, numbered or clearly sequential steps that an engineer could follow to reproduce the problem, plus the expected and actual outcome?"
+    },
+    "component": {
+      "type": "choice",
+      "instructions": "Which component owns the root cause of new_issue?",
+      "criteria": {
+        "export": {"covers": "CSV, PDF and XLSX export pipelines, export workers, file encoding and escaping.", "does_not_cover": "The UI button that triggers an export (that is web_ui)."},
+        "web_ui": {"covers": "Browser front-end: layout, buttons, forms, client-side validation.", "does_not_cover": "Correctness of data produced by backend jobs."},
+        "api": {"covers": "Public REST/GraphQL API: request handling, auth, response schemas."},
+        "permissions": {"covers": "Roles, sharing, access control decisions."},
+        "billing": {"covers": "Plans, invoices, payment methods, seat counts."}
+      }
+    },
+    "duplicate_of": {
+      "type": "choice",
+      "instructions": {"task": "Is new_issue a duplicate of one of existing_issues? Pick the matching id, or `none`.", "rule": "A duplicate has the same root cause, not merely the same feature area. Two different symptoms of the same escaping bug count as duplicates."},
+      "criteria": {
+        "ISS-2201": null,
+        "ISS-2377": null,
+        "ISS-2410": null,
+        "ISS-2455": null,
+        "none": "No existing issue shares the root cause."
+      }
+    },
+    "priority": {
+      "type": "choice",
+      "instructions": "Assign a priority for the engineering queue, combining severity with business impact signals in the report (plan tier, downstream consequences, presence of a workaround).",
+      "criteria": {
+        "P0": "Drop everything; fix today.",
+        "P1": "Fix in the current sprint.",
+        "P2": "Schedule in the next one or two sprints.",
+        "P3": "Backlog; fix opportunistically."
+      }
+    }
+  }
+}

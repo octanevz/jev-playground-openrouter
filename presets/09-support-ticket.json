@@ -1,0 +1,35 @@
+{
+  "name": "Support ticket (dev tool)",
+  "description": "The classic docs example: route a support message, gauge frustration, flag urgency.",
+  "state": "Subject: CLI hangs on `devtool deploy` since this morning\n\nHi, we've been using your CLI for about a year without trouble. Since upgrading to 2.31.0 this morning, `devtool deploy --env prod` just hangs after printing 'Uploading bundle (14.2 MB)...' and never finishes. Ctrl+C doesn't even work, I have to kill the process. Downgrading to 2.30.4 fixes it. We have a release window closing in 3 hours and I really need this working. Logs with --verbose attached below.\n\n[verbose log: 'PUT https://api.devtool.example/v1/bundles ... waiting for 100-continue' repeated every 30s]\n\nThanks,\nPriya",
+  "questions": {
+    "department": {
+      "type": "choice",
+      "instructions": "Which team should handle this ticket?",
+      "criteria": {
+        "engineering": "A bug or regression in the product that needs a code fix.",
+        "support": "Usage questions, how-to, configuration help, account issues.",
+        "billing": "Invoices, plans, payments, refunds.",
+        "sales": "Pricing for new plans, enterprise inquiries, demos."
+      }
+    },
+    "frustration": {
+      "type": "score",
+      "instructions": "How frustrated is the customer?",
+      "criteria": [
+        "Calm and neutral.",
+        "Mildly annoyed; polite but there is friction.",
+        "Clearly frustrated; time pressure or repeated failures mentioned.",
+        "Angry; threatens to churn, uses strong language, or escalates."
+      ]
+    },
+    "is_urgent": {
+      "type": "noul",
+      "instructions": "Does this ticket require a response within the hour?",
+      "criteria": {
+        "true": "Production is blocked, a deadline is imminent, or data is at risk.",
+        "false": "A question or a non-blocking issue with a workaround and no stated deadline."
+      }
+    }
+  }
+}

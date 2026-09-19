@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Jev Playground (OpenRouter)</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%277%27 fill=%27%232f6df6%27/%3E%3Ctext x=%2716%27 y=%2722%27 font-family=%27sans-serif%27 font-size=%2717%27 font-weight=%27700%27 fill=%27white%27 text-anchor=%27middle%27%3EJ%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="/static/style.css">
+<script>try { var t = localStorage.getItem('jevlab.theme'); if (t && t !== 'system') document.documentElement.dataset.theme = t; } catch (e) {}</script>
+</head>
+<body>
+<header id="topbar">
+  <div class="brand">
+    <span class="logo">Jev</span><span class="lab">Playground</span><span class="via">OpenRouter</span>
+    <span id="model-meta" class="meta" title="From /api/model-info"></span>
+  </div>
+  <div class="model-field">
+    <label for="model-id">Model</label>
+    <input id="model-id" type="text" value="typesafe/jev-1.13" spellcheck="false" autocomplete="off">
+  </div>
+  <button id="run-btn" class="primary" title="Ctrl/Cmd+Enter">Run</button>
+  <div id="last-stats" class="stats" aria-live="polite">
+    <span class="stat"><span class="k">latency</span><span class="v" id="stat-latency">–</span></span>
+    <span class="stat"><span class="k">input tokens</span><span class="v" id="stat-tokens">–</span></span>
+    <span class="stat"><span class="k">cost</span><span class="v" id="stat-cost">–</span></span>
+  </div>
+  <div class="spacer"></div>
+  <div class="toolbar">
+    <button id="curl-btn" class="ghost" title="Copy the current request as a cURL command">Copy cURL</button>
+    <button id="export-btn" class="ghost" title="Download the whole playground as JSON">Export</button>
+    <button id="import-btn" class="ghost" title="Load a lab JSON file">Import</button>
+    <input id="import-file" type="file" accept="application/json,.json" hidden>
+    <button id="history-btn" class="ghost">History <span id="history-count" class="badge">0</span></button>
+    <select id="theme-select" title="Theme" aria-label="Theme">
+      <option value="system">System</option>
+      <option value="light">Light</option>
+      <option value="dark">Dark</option>
+      <option value="nord">Nord</option>
+      <option value="solarized">Solarized</option>
+      <option value="dracula">Dracula</option>
+      <option value="gruvbox">Gruvbox</option>
+      <option value="rose">Rosé Pine Dawn</option>
+      <option value="synthwave">Synthwave</option>
+      <option value="cyberlime">Cyber Lime</option>
+      <option value="lagoon">Coral Lagoon</option>
+      <option value="aurora">Aurora</option>
+    </select>
+    <div class="popover-host">
+      <button id="settings-btn" class="ghost" aria-haspopup="true" aria-expanded="false">Thresholds</button>
+      <div id="settings-pop" class="popover" hidden>
+        <h4>Confidence bands</h4>
+        <p class="hint">Band = <span class="band red">escalate</span> if value &lt; low, <span class="band amber">confirm</span> if value &lt; high, else <span class="band green">act</span>. Noul cards band on certainty = 2·|noul − 0.5| with low / medium / high labels.</p>
+        <label>low <input id="thr-low" type="number" min="0" max="1" step="0.01" value="0.5"></label>
+        <label>high <input id="thr-high" type="number" min="0" max="1" step="0.01" value="0.8"></label>
+        <div id="thr-error" class="error" hidden></div>
+      </div>
+    </div>
+  </div>
+  <div id="progress" class="progress" hidden aria-live="polite"><div class="ptrack"><i></i></div><span class="plabel"></span></div>
+</header>
+
+<div id="banner" class="banner" role="status" hidden></div>
+
+<main id="lab">
+  <section id="left">
+    <div class="pane" id="state-pane">
+      <div class="pane-head">
+        <h2>State</h2>
+        <div class="seg" role="tablist" aria-label="State mode">
+          <button data-mode="text" class="active" role="tab">Text</button>
+          <button data-mode="json" role="tab">JSON</button>
+        </div>
+        <select id="preset-select" title="Load sample state and questions from a preset">
+          <option value="">Load preset…</option>
+        </select>
+        <button id="new-btn" class="small" title="Clear state, questions and results and start fresh (history is kept)">New</button>
+      </div>
+      <textarea id="state-text" spellcheck="false" placeholder="Paste a diff, a commit message, a ticket, a code snippet, or (in JSON mode) a JSON object or array."></textarea>
+      <div id="state-error" class="error" hidden></div>
+      <div id="batch-box" class="pair-box" hidden>
+        <span id="batch-label"></span>
+        <button id="batch-run" class="small" title="One request per array element, run sequentially">Run batch</button>
+      </div>
+      <div id="pair-box" class="pair-box" hidden>
+        <span id="pair-label"></span>
+        <button id="pair-run" class="small">Run boundary pair A/B</button>
+      </div>
+    </div>
+
+    <div class="pane" id="questions-pane">
+      <div class="pane-head">
+        <h2>Questions <span id="q-count" class="badge"></span></h2>
+        <div class="seg" role="tablist" aria-label="Questions view">
+          <button data-tab="cards" class="active" role="tab">Cards</button>
+          <button data-tab="raw" role="tab">Raw JSON</button>
+        </div>
+        <div class="grow"></div>
+        <button id="add-q" class="small">+ Add question</button>
+        <button id="rubric-snapshot" class="small ghost" title="Freeze the current questions as revision A for rubric comparison">Snapshot as A</button>
+        <button id="rubric-run" class="small ghost" hidden title="Run revision A and the current questions (B) against the frozen state">Run A vs B</button>
+      </div>
+      <div id="raw-banner" class="notice" hidden>Raw draft pending – cards are read-only until the draft is applied.</div>
+      <div id="q-cards" class="cards"></div>
+      <div id="q-raw" hidden>
+        <textarea id="raw-text" spellcheck="false"></textarea>
+        <div class="row">
+          <button id="raw-apply" class="small">Apply</button>
+          <span id="raw-status" class="hint"></span>
+        </div>
+        <p class="hint">Standard JSON parsing applies: a duplicated key silently keeps the last value. Enabled/disabled is tracked outside this map; disabled questions are shown here but omitted from the request.</p>
+      </div>
+      <div id="q-errors" class="error" hidden></div>
+    </div>
+  </section>
+
+  <section id="right">
+    <div class="pane" id="results-pane">
+      <div class="pane-head">
+        <h2>Results</h2>
+        <span id="result-title" class="hint"></span>
+        <div class="grow"></div>
+        <span class="consistency" title="Self-consistency: run the same request N times">
+          <select id="consist-n"><option>2</option><option>3</option><option selected>5</option></select>
+          <button id="consist-run" class="small ghost">Run ×N</button>
+        </span>
+        <button id="explorer-toggle" class="small ghost" hidden>Threshold explorer</button>
+      </div>
+      <div id="run-error" class="error" hidden></div>
+      <div id="explorer" class="explorer" hidden>
+        <label>high boundary <input id="explorer-slider" type="range" min="0" max="1" step="0.01"> <span id="explorer-val"></span></label>
+        <div id="explorer-out"></div>
+      </div>
+      <div id="results" class="results"><p class="empty">Load a preset or write questions, then press Run.</p></div>
+      <div id="diff" class="diff" hidden></div>
+      <details id="raw-request-box" hidden><summary>Raw request</summary><pre id="raw-request"></pre></details>
+      <details id="raw-response-box" hidden><summary>Raw response</summary><pre id="raw-response"></pre></details>
+      <div id="compare" class="compare" hidden></div>
+    </div>
+  </section>
+</main>
+
+<aside id="history-drawer" class="drawer" hidden>
+  <div class="drawer-head">
+    <h3>History</h3>
+    <button id="history-clear" class="small ghost">Clear</button>
+    <button id="history-close" class="small ghost">Close</button>
+  </div>
+  <ul id="history-list"></ul>
+</aside>
+
+<template id="tpl-question">
+  <div class="qcard">
+    <div class="qhead">
+      <label class="chk"><input type="checkbox" class="q-enabled" checked title="Include in request"></label>
+      <input class="q-id" type="text" placeholder="question_id" spellcheck="false">
+      <select class="q-type">
+        <option value="noul">noul</option>
+        <option value="choice">choice</option>
+        <option value="score">score</option>
+      </select>
+      <div class="grow"></div>
+      <button class="icon q-dup" title="Duplicate">⧉</button>
+      <button class="icon q-del" title="Delete">✕</button>
+    </div>
+    <div class="q-warn warn" hidden></div>
+    <div class="q-err error" hidden></div>
+    <div class="field q-instructions"></div>
+    <div class="q-criteria"></div>
+    <div class="q-extra hint" hidden></div>
+  </div>
+</template>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

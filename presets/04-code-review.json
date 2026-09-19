@@ -1,0 +1,59 @@
+{
+  "name": "Code review assistant",
+  "description": "Quick quality signals on a code snippet.",
+  "state": "def get_user_orders(db, user_id, status=None):\n    q = \"SELECT * FROM orders WHERE user_id = \" + str(user_id)\n    if status:\n        q += \" AND status = '\" + status + \"'\"\n    rows = db.execute(q).fetchall()\n    result = []\n    for r in rows:\n        d = {}\n        d['id'] = r[0]\n        d['total'] = r[3]\n        d['status'] = r[5]\n        result.append(d)\n    return result\n",
+  "questions": {
+    "readability": {
+      "type": "score",
+      "instructions": "Rate how easy the snippet is to read and understand for a new team member.",
+      "criteria": [
+        "Hard to follow: cryptic names, magic numbers, tangled control flow.",
+        "Understandable with effort; some unclear names or implicit assumptions.",
+        "Clear structure and naming; minor nits only.",
+        "Exemplary: self-documenting, small, obvious."
+      ]
+    },
+    "has_obvious_bug": {
+      "type": "noul",
+      "instructions": "Does the snippet contain a defect that a careful reviewer would flag as a definite bug or security hole, rather than a style preference?",
+      "criteria": {
+        "true": ["SQL/command injection", "off-by-one or wrong index", "unhandled None/null leading to a crash", "resource leak", "wrong operator or condition"],
+        "false": "Only style, naming, or performance concerns."
+      }
+    },
+    "error_handling": {
+      "type": "score",
+      "instructions": "How well does the snippet handle failure modes relevant to what it does (bad input, missing rows, I/O errors)?",
+      "criteria": [
+        "No handling; failures crash or silently produce wrong data.",
+        "Some checks but important cases are missed.",
+        "Reasonable handling of the main failure modes.",
+        "Thorough and intentional: validated inputs, meaningful errors, no swallowed exceptions."
+      ]
+    },
+    "test_worthy": {
+      "type": "noul",
+      "instructions": "Would a reasonable team require unit tests for this code before merging (as opposed to it being trivial glue that tests would not meaningfully protect)?"
+    },
+    "complexity": {
+      "type": "choice",
+      "instructions": "Classify the cognitive complexity of the snippet.",
+      "criteria": {
+        "trivial": "A few lines, one path, no branching to speak of.",
+        "moderate": "Some branching or loops; fits in one screen and one mental model.",
+        "complex": "Many branches, nested loops, or multiple responsibilities; needs careful reading.",
+        "needs_split": "Does several unrelated things and should be broken into separate functions."
+      }
+    },
+    "naming_quality": {
+      "type": "score",
+      "instructions": "Rate identifier naming: variables, parameters, and the function name.",
+      "criteria": [
+        "Single letters or misleading names throughout.",
+        "Mixed: the function is named well but locals are opaque, or vice versa.",
+        "Mostly descriptive; a couple of names could be better.",
+        "Every name says exactly what it holds or does."
+      ]
+    }
+  }
+}

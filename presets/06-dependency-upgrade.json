@@ -1,0 +1,40 @@
+{
+  "name": "Dependency upgrade",
+  "description": "Decide whether and when to upgrade a library from its changelog.",
+  "state": {
+    "package": "httpclient",
+    "current_version": "4.8.2",
+    "target_version": "5.1.0",
+    "changelog_excerpt": "## 5.1.0\n- feat: HTTP/3 support behind `enable_h3=True`\n- fix: connection pool no longer leaks sockets on cancelled requests (#2210)\n\n## 5.0.0\n### Breaking\n- `Client.request()` now returns a `Response` object instead of a tuple `(status, headers, body)`. Migrate with `resp.status`, `resp.headers`, `resp.body`.\n- Dropped Python 3.8 support.\n- Default timeout changed from `None` to 30 seconds.\n### Security\n- CVE-2026-31877: header injection via unsanitized newline in custom header values. All 4.x versions are affected. (High)\n\n## 4.9.0\n- deprecate: tuple return from `Client.request()`; warning emitted.",
+    "usage_notes": "We call Client.request() in 37 places and rely on the tuple return. Python 3.11 in prod."
+  },
+  "questions": {
+    "breaking_changes": {
+      "type": "noul",
+      "instructions": "Does upgrading from current_version to target_version include breaking changes that would require code changes in a project that uses the library as described in usage_notes?"
+    },
+    "upgrade_effort": {
+      "type": "score",
+      "instructions": "Estimate the engineering effort to complete the upgrade, including code migration and verification.",
+      "criteria": [
+        "Bump the version, run tests, done (under an hour).",
+        "A few mechanical edits; half a day.",
+        "Systematic migration across many call sites; a few days.",
+        "Architectural change or extensive re-testing; a week or more."
+      ]
+    },
+    "security_fix_included": {
+      "type": "noul",
+      "instructions": "Does the range between current_version and target_version include a security fix that applies to the currently running version?"
+    },
+    "recommendation": {
+      "type": "choice",
+      "instructions": "What should the team do?",
+      "criteria": {
+        "upgrade_now": "Start the upgrade immediately; security or stability risk outweighs the migration cost.",
+        "schedule": "Plan it into an upcoming sprint; important but not urgent.",
+        "skip": "No meaningful benefit; stay on the current version for now."
+      }
+    }
+  }
+}

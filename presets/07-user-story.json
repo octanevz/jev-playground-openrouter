@@ -1,0 +1,36 @@
+{
+  "name": "User story quality",
+  "description": "Assess whether a requirement is testable, unambiguous and appropriately sized.",
+  "state": "As a workspace admin, I want to bulk-invite users by uploading a CSV of email addresses so that onboarding a new department does not require inviting people one by one.\n\nAcceptance criteria:\n- Admins see an 'Import CSV' button on the Members page.\n- The CSV must have a header row with an `email` column; other columns are ignored.\n- Invalid email rows are reported back with the line number and skipped; valid rows are invited.\n- The upload is limited to 500 rows; larger files are rejected with a clear message.\n- Invited users receive the standard invitation email.",
+  "questions": {
+    "is_testable": {
+      "type": "noul",
+      "instructions": "Could a QA engineer write concrete pass/fail test cases directly from this story without asking clarifying questions?"
+    },
+    "ambiguity": {
+      "type": "score",
+      "instructions": "How ambiguous is the story? Consider undefined terms, unstated edge cases, and behaviors that two engineers might implement differently.",
+      "criteria": [
+        "Unambiguous: edge cases, limits and error behavior are spelled out.",
+        "Minor gaps a developer can fill with obvious defaults.",
+        "Several open questions that would change the implementation.",
+        "Too vague to estimate or build; needs a rewrite."
+      ]
+    },
+    "size": {
+      "type": "choice",
+      "instructions": "T-shirt size the story for a typical full-stack team of three.",
+      "criteria": {
+        "XS": {"definition": "Under half a day.", "examples": ["copy change", "add a config flag"]},
+        "S": {"definition": "One to two days; one component, no new infrastructure.", "examples": ["new form field with validation"]},
+        "M": {"definition": "Three to five days; front-end plus back-end plus tests.", "examples": ["CSV import with validation and reporting"]},
+        "L": {"definition": "One to two weeks; multiple services or a new background job.", "examples": ["async import pipeline with progress tracking"]},
+        "XL": {"definition": "More than two weeks; should be split into several stories."}
+      }
+    },
+    "missing_acceptance_criteria": {
+      "type": "noul",
+      "instructions": "Is the story missing acceptance criteria that would be needed to consider it done (either no criteria at all, or important behaviors left unspecified)?"
+    }
+  }
+}

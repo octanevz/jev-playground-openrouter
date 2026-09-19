@@ -1,0 +1,65 @@
+{
+  "name": "Incident classification",
+  "description": "Decide whether an alert is a real incident, its blast radius, likely cause and whether to page.",
+  "state": {
+    "alert": {
+      "name": "checkout-api-5xx-rate",
+      "severity": "warning",
+      "fired_at": "2026-09-19T03:41:07Z",
+      "summary": "5xx rate on checkout-api is 18.4% over the last 5m (threshold 2%)",
+      "labels": {"service": "checkout-api", "region": "eu-west-1", "env": "prod"}
+    },
+    "recent_deploys": [
+      {"service": "checkout-api", "version": "2026.09.19-1", "at": "2026-09-19T03:32:50Z", "author": "release-bot"}
+    ],
+    "logs": [
+      "03:33:12 checkout-api[7f2a] INFO  started v2026.09.19-1",
+      "03:33:14 checkout-api[7f2a] INFO  connected to payments-gateway pool=10",
+      "03:35:41 checkout-api[7f2a] ERROR PaymentsClient: TypeError: Cannot read properties of undefined (reading 'currency') at normalizeCart (cart.js:88)",
+      "03:35:41 checkout-api[7f2a] ERROR request failed POST /v1/checkout 500 trace=a1c3",
+      "03:36:02 checkout-api[7f2a] ERROR PaymentsClient: TypeError: Cannot read properties of undefined (reading 'currency') at normalizeCart (cart.js:88)",
+      "03:36:02 checkout-api[7f2a] ERROR request failed POST /v1/checkout 500 trace=b77e",
+      "03:40:55 checkout-api[7f2a] WARN  error budget burn rate 14x"
+    ]
+  },
+  "questions": {
+    "is_incident": {
+      "type": "noul",
+      "instructions": "Is this a real production incident (users are affected or will be imminently), as opposed to a noisy alert, a test, or a self-healing blip?"
+    },
+    "blast_radius": {
+      "type": "score",
+      "instructions": "Estimate how much of the user base and which functionality is affected.",
+      "criteria": [
+        {"level": "none", "definition": "No user-facing impact."},
+        {"level": "narrow", "definition": "A small subset of users or a non-critical feature."},
+        {"level": "significant", "definition": "A whole region, a major feature, or a large fraction of users."},
+        {"level": "total", "definition": "All users cannot complete a core flow (sign in, pay, load the app)."}
+      ]
+    },
+    "likely_cause": {
+      "type": "choice",
+      "instructions": "What is the most likely root cause given the evidence?",
+      "criteria": {
+        "deploy": "A recent code release introduced the failure.",
+        "config": "A configuration or feature-flag change.",
+        "dependency": "An upstream internal service or third-party API is failing.",
+        "capacity": "Resource exhaustion: CPU, memory, connections, disk, queue depth.",
+        "external": "Network, DNS, cloud provider, or DDoS.",
+        "unknown": "Evidence is insufficient to pick one."
+      }
+    },
+    "page_oncall": {
+      "type": "noul",
+      "instructions": "Should the on-call engineer be paged right now (interrupting sleep if necessary)?",
+      "criteria": {
+        "true": {"covers": "Revenue-impacting or core-flow failure in prod, sustained for more than a few minutes, or actively getting worse.", "examples": ["checkout failing", "login failing", "data loss in progress"]},
+        "false": {"covers": "Non-prod, self-resolved, cosmetic, or can safely wait for business hours.", "examples": ["staging alert", "single transient 5xx", "batch job delayed by 10 minutes"]}
+      }
+    },
+    "customer_facing": {
+      "type": "noul",
+      "instructions": "Would an end customer notice this problem directly (as opposed to only internal tooling or observability being affected)?"
+    }
+  }
+}

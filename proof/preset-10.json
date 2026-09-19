@@ -1,0 +1,196 @@
+{
+  "preset": "10-kitchen-sink",
+  "preset_name": "Kitchen sink (schema tour)",
+  "captured_at": "2026-09-19T02:26:52+00:00",
+  "endpoint": "POST https://openrouter.ai/api/alpha/decisions (via jev-lab server.py /api/decide)",
+  "proxy": {
+    "latency_ms": 465,
+    "attempts": 1
+  },
+  "request": {
+    "model": "typesafe/jev-1.13",
+    "state": {
+      "repo": "acme/billing-service",
+      "pr_number": 917,
+      "title": "Migrate invoice PDF generation from wkhtmltopdf to headless Chromium",
+      "body": "wkhtmltopdf is unmaintained and breaks with the new CSS grid layouts. This swaps the renderer to a Chromium sidecar. Output is byte-for-byte different but visually identical in our 40 golden-file tests (regenerated). Adds ~180 MB to the container image. Rollback: set PDF_RENDERER=legacy.",
+      "files_changed": [
+        "services/pdf/renderer.py",
+        "services/pdf/chromium_client.py",
+        "Dockerfile",
+        "tests/pdf/golden/*.pdf",
+        "docs/ops/pdf-rendering.md"
+      ],
+      "ci": {
+        "status": "passed",
+        "duration_s": 812
+      }
+    },
+    "questions": {
+      "merge_readiness": {
+        "type": "score",
+        "instructions": {
+          "task": "Rate how ready this PR is to merge.",
+          "consider": [
+            "CI status",
+            "test evidence",
+            "rollback plan",
+            "operational impact"
+          ],
+          "ignore": "Code style."
+        },
+        "criteria": [
+          {
+            "level": "not_ready",
+            "definition": "Failing CI, no tests, or unresolved design questions.",
+            "examples": [
+              "CI red",
+              "TODOs in the diff"
+            ]
+          },
+          {
+            "level": "needs_work",
+            "definition": "Passes CI but lacks evidence for a risky change or has no rollback path."
+          },
+          {
+            "level": "ready_with_notes",
+            "definition": "Mergeable; reviewer should note follow-ups (docs, image size, monitoring).",
+            "examples": [
+              "large image size increase acknowledged"
+            ]
+          },
+          {
+            "level": "ready",
+            "definition": "Nothing left to do; merge."
+          }
+        ]
+      },
+      "area": {
+        "type": "choice",
+        "instructions": [
+          "Pick the single area most affected by this PR.",
+          "Use files_changed as the primary signal and the body as a tiebreaker."
+        ],
+        "criteria": {
+          "rendering": {
+            "covers": "PDF/HTML rendering pipeline, fonts, layout engines.",
+            "does_not_cover": "Where rendered files are stored."
+          },
+          "infrastructure": {
+            "covers": "Dockerfiles, sidecars, resource limits, deployment manifests.",
+            "does_not_cover": "Application code that happens to live in the same PR."
+          },
+          "storage": null,
+          "docs": null
+        }
+      },
+      "ops_impact": {
+        "type": "noul",
+        "instructions": "Will operators need to do something (capacity, monitoring, runbooks) when this ships?",
+        "criteria": {
+          "true": {
+            "covers": "New sidecar or process, image size or memory changes, new env vars, new failure modes.",
+            "examples": [
+              "adds a Chromium sidecar"
+            ]
+          },
+          "false": {
+            "covers": "Pure application logic with the same runtime footprint."
+          }
+        }
+      },
+      "needs_changelog": {
+        "type": "noul",
+        "instructions": "Should this change be mentioned in the user-facing changelog?"
+      },
+      "reviewer_count": {
+        "type": "choice",
+        "instructions": {
+          "task": "How many reviewers should this PR get?",
+          "hint": "Use risk and breadth of files_changed."
+        },
+        "criteria": {
+          "one": "One reviewer is enough.",
+          "two": "Two reviewers: the change is risky or cross-cutting.",
+          "three_plus": "Needs a wider review or an RFC."
+        }
+      }
+    }
+  },
+  "response": {
+    "model": "typesafe/jev-1.13-20260917",
+    "answers": {
+      "merge_readiness": {
+        "type": "score",
+        "score": 2,
+        "legend": {
+          "0": {
+            "level": "not_ready",
+            "definition": "Failing CI, no tests, or unresolved design questions.",
+            "examples": [
+              "CI red",
+              "TODOs in the diff"
+            ]
+          },
+          "1": {
+            "level": "needs_work",
+            "definition": "Passes CI but lacks evidence for a risky change or has no rollback path."
+          },
+          "2": {
+            "level": "ready_with_notes",
+            "definition": "Mergeable; reviewer should note follow-ups (docs, image size, monitoring).",
+            "examples": [
+              "large image size increase acknowledged"
+            ]
+          },
+          "3": {
+            "level": "ready",
+            "definition": "Nothing left to do; merge."
+          }
+        },
+        "probabilities": {
+          "0": 0,
+          "1": 0,
+          "2": 1,
+          "3": 0
+        },
+        "confidence": 1
+      },
+      "area": {
+        "type": "choice",
+        "choice": "rendering",
+        "probabilities": {
+          "storage": 0,
+          "docs": 0,
+          "infrastructure": 0,
+          "rendering": 1
+        },
+        "confidence": 1
+      },
+      "ops_impact": {
+        "type": "noul",
+        "noul": 0.91
+      },
+      "needs_changelog": {
+        "type": "noul",
+        "noul": 0.48
+      },
+      "reviewer_count": {
+        "type": "choice",
+        "choice": "two",
+        "probabilities": {
+          "two": 0.95,
+          "three_plus": 0.05,
+          "one": 0
+        },
+        "confidence": 0.92
+      }
+    },
+    "usage": {
+      "input_tokens": 1072,
+      "output_tokens": 142,
+      "cost": 4.5024e-05
+    },
+    "provider": "TypeSafe"
+  }
+}

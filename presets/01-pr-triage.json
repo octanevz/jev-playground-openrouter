@@ -1,0 +1,68 @@
+{
+  "name": "PR triage",
+  "description": "Classify a pull request from its title, description and diff summary.",
+  "state": "Title: Add rate limiting to the public /v2/search endpoint\n\nDescription:\nSearch traffic from a handful of API keys has been saturating the cluster. This PR adds a token-bucket limiter (100 req/min per API key, burst 20) in the gateway middleware. Exceeding the limit returns 429 with a Retry-After header. Limits are configurable via SEARCH_RATE_LIMIT_* env vars. Added unit tests for the bucket and an integration test for the 429 path. No changes to the response schema for successful requests.\n\nDiff summary:\n gateway/middleware/rate_limit.py      | 142 +++++++++++++ (new)\n gateway/middleware/__init__.py        |   3 +\n gateway/routes/search.py              |  11 +-\n gateway/config.py                     |   9 +\n tests/gateway/test_rate_limit.py      |  88 +++++++++ (new)\n tests/integration/test_search_429.py  |  41 +++++ (new)\n docs/api/search.md                    |  14 +\n 7 files changed, 305 insertions(+), 3 deletions(-)",
+  "questions": {
+    "change_kind": {
+      "type": "choice",
+      "instructions": "Classify the primary intent of this pull request. If it mixes kinds, pick the one that best explains why the PR exists.",
+      "criteria": {
+        "feature": "Adds new user-visible or API-visible behavior that did not exist before.",
+        "bugfix": "Corrects behavior that was wrong relative to the intended spec.",
+        "refactor": "Restructures code without changing observable behavior.",
+        "chore": "Maintenance: dependency bumps, tooling, CI, formatting, housekeeping.",
+        "docs": "Only documentation or comments change.",
+        "test": "Only tests are added or changed."
+      }
+    },
+    "risk": {
+      "type": "score",
+      "instructions": "How risky is merging this PR as-is? Consider blast radius, reversibility, test coverage, and whether it touches request handling on hot paths.",
+      "criteria": [
+        {"level": "negligible", "definition": "Docs, comments, tests only, or dead code. Cannot affect production behavior."},
+        {"level": "low", "definition": "Small, well-tested, easily reverted change in a non-critical path."},
+        {"level": "moderate", "definition": "Touches a shared or hot path, or changes behavior for some users; tests exist but edge cases are plausible."},
+        {"level": "high", "definition": "Could reject or corrupt production traffic, change data, or affect all users; hard to roll back or lightly tested."}
+      ]
+    },
+    "needs_security_review": {
+      "type": "noul",
+      "instructions": "Should a security engineer review this PR before merge?",
+      "criteria": {
+        "true": {"covers": "Authentication, authorization, secrets, crypto, input parsing of untrusted data, new network exposure, rate limiting or abuse controls, dependency with known CVEs."},
+        "false": {"covers": "Pure UI, docs, tests, internal refactors with no trust-boundary changes."}
+      }
+    },
+    "touches_public_api": {
+      "type": "noul",
+      "instructions": "Does this PR change the externally observable contract of a public API: routes, request or response schema, status codes, headers, or documented limits?"
+    },
+    "description_quality": {
+      "type": "score",
+      "instructions": "Rate the PR description on whether a reviewer can understand the motivation, the approach, and how it was verified without reading the diff.",
+      "criteria": [
+        "Missing or a single vague line.",
+        "States what changed but not why or how it was tested.",
+        "Explains what and why; testing is mentioned but thin.",
+        "Explains motivation, approach, configuration, testing, and compatibility impact."
+      ]
+    },
+    "suggested_reviewer_team": {
+      "type": "choice",
+      "instructions": "Which team should own the review, based on the files and the nature of the change?",
+      "criteria": {
+        "backend": "Application services, API routes, middleware, business logic.",
+        "frontend": "Web or mobile UI code, client-side state, styling.",
+        "infra": "Deployment, Kubernetes, CI pipelines, observability, cloud config.",
+        "data": "Pipelines, warehouses, schemas, analytics jobs."
+      }
+    }
+  },
+  "pair": {
+    "question_id": "risk",
+    "expect": "down",
+    "label": "Adding tests should lower risk",
+    "state_a": "Title: Add rate limiting to the public /v2/search endpoint\n\nDescription:\nAdds a token-bucket limiter (100 req/min per API key) in the gateway middleware. Exceeding the limit returns 429. No tests added yet; will follow up.\n\nDiff summary:\n gateway/middleware/rate_limit.py | 142 +++++ (new)\n gateway/routes/search.py         |  11 +-\n 2 files changed, 150 insertions(+), 3 deletions(-)",
+    "state_b": "Title: Add rate limiting to the public /v2/search endpoint\n\nDescription:\nAdds a token-bucket limiter (100 req/min per API key) in the gateway middleware. Exceeding the limit returns 429. Added unit tests for the bucket and an integration test for the 429 path; the limiter is behind a feature flag defaulting to off.\n\nDiff summary:\n gateway/middleware/rate_limit.py     | 142 +++++ (new)\n gateway/routes/search.py             |  11 +-\n tests/gateway/test_rate_limit.py     |  88 +++++ (new)\n tests/integration/test_search_429.py |  41 +++++ (new)\n 4 files changed, 279 insertions(+), 3 deletions(-)"
+  }
+}

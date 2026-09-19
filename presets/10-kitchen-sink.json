@@ -1,0 +1,133 @@
+{
+  "name": "Kitchen sink (schema tour)",
+  "description": "Every EntryType form in one preset: object and array instructions, null and object option descriptions, object score levels with definition + examples, and structured noul true/false. (null is only valid for Choice option descriptions; see README.)",
+  "state": {
+    "repo": "acme/billing-service",
+    "pr_number": 917,
+    "title": "Migrate invoice PDF generation from wkhtmltopdf to headless Chromium",
+    "body": "wkhtmltopdf is unmaintained and breaks with the new CSS grid layouts. This swaps the renderer to a Chromium sidecar. Output is byte-for-byte different but visually identical in our 40 golden-file tests (regenerated). Adds ~180 MB to the container image. Rollback: set PDF_RENDERER=legacy.",
+    "files_changed": [
+      "services/pdf/renderer.py",
+      "services/pdf/chromium_client.py",
+      "Dockerfile",
+      "tests/pdf/golden/*.pdf",
+      "docs/ops/pdf-rendering.md"
+    ],
+    "ci": {
+      "status": "passed",
+      "duration_s": 812
+    }
+  },
+  "questions": {
+    "merge_readiness": {
+      "type": "score",
+      "instructions": {
+        "task": "Rate how ready this PR is to merge.",
+        "consider": [
+          "CI status",
+          "test evidence",
+          "rollback plan",
+          "operational impact"
+        ],
+        "ignore": "Code style."
+      },
+      "criteria": [
+        {
+          "level": "not_ready",
+          "definition": "Failing CI, no tests, or unresolved design questions.",
+          "examples": [
+            "CI red",
+            "TODOs in the diff"
+          ]
+        },
+        {
+          "level": "needs_work",
+          "definition": "Passes CI but lacks evidence for a risky change or has no rollback path."
+        },
+        {
+          "level": "ready_with_notes",
+          "definition": "Mergeable; reviewer should note follow-ups (docs, image size, monitoring).",
+          "examples": [
+            "large image size increase acknowledged"
+          ]
+        },
+        {
+          "level": "ready",
+          "definition": "Nothing left to do; merge."
+        }
+      ]
+    },
+    "area": {
+      "type": "choice",
+      "instructions": [
+        "Pick the single area most affected by this PR.",
+        "Use files_changed as the primary signal and the body as a tiebreaker."
+      ],
+      "criteria": {
+        "rendering": {
+          "covers": "PDF/HTML rendering pipeline, fonts, layout engines.",
+          "does_not_cover": "Where rendered files are stored."
+        },
+        "infrastructure": {
+          "covers": "Dockerfiles, sidecars, resource limits, deployment manifests.",
+          "does_not_cover": "Application code that happens to live in the same PR."
+        },
+        "storage": null,
+        "docs": null
+      }
+    },
+    "ops_impact": {
+      "type": "noul",
+      "instructions": "Will operators need to do something (capacity, monitoring, runbooks) when this ships?",
+      "criteria": {
+        "true": {
+          "covers": "New sidecar or process, image size or memory changes, new env vars, new failure modes.",
+          "examples": [
+            "adds a Chromium sidecar"
+          ]
+        },
+        "false": {
+          "covers": "Pure application logic with the same runtime footprint."
+        }
+      }
+    },
+    "needs_changelog": {
+      "type": "noul",
+      "instructions": "Should this change be mentioned in the user-facing changelog?"
+    },
+    "reviewer_count": {
+      "type": "choice",
+      "instructions": {
+        "task": "How many reviewers should this PR get?",
+        "hint": "Use risk and breadth of files_changed."
+      },
+      "criteria": {
+        "one": "One reviewer is enough.",
+        "two": "Two reviewers: the change is risky or cross-cutting.",
+        "three_plus": "Needs a wider review or an RFC."
+      }
+    }
+  },
+  "pair": {
+    "question_id": "merge_readiness",
+    "expect": "down",
+    "label": "Failing CI should lower merge_readiness",
+    "state_a": {
+      "title": "Migrate invoice PDF generation to headless Chromium",
+      "body": "Swaps the renderer to a Chromium sidecar. 40 golden-file tests regenerated and passing. Rollback: PDF_RENDERER=legacy.",
+      "ci": {
+        "status": "passed"
+      }
+    },
+    "state_b": {
+      "title": "Migrate invoice PDF generation to headless Chromium",
+      "body": "Swaps the renderer to a Chromium sidecar. 40 golden-file tests regenerated and passing. Rollback: PDF_RENDERER=legacy.",
+      "ci": {
+        "status": "failed",
+        "failed_jobs": [
+          "integration-tests"
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "name": "Commit message quality",
+  "description": "Judge a single commit message against Conventional Commits and good-practice rules.",
+  "state": "fix(auth): refresh expired session tokens before retrying API calls\n\nClients with a session older than 24h were getting a 401 on the first request after\nwaking from sleep, because the SDK retried with the stale token. We now check `expires_at`\nbefore each call and refresh proactively when less than 60s remain.\n\nFixes #4821",
+  "questions": {
+    "follows_conventional_commits": {
+      "type": "noul",
+      "instructions": "Does the commit message follow the Conventional Commits format: a header of the form `type(optional scope): description`, with a lowercase type from the standard set?",
+      "criteria": {
+        "true": "Header matches `type(scope)?: description` with a known type (feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert).",
+        "false": "No type prefix, wrong separator, unknown type, or the header is a free-form sentence."
+      }
+    },
+    "imperative_mood": {
+      "type": "noul",
+      "instructions": "Is the summary line (the part after the type prefix) written in the imperative mood, as in 'add X' or 'fix Y', rather than 'added', 'fixes', or 'adding'?"
+    },
+    "explains_why": {
+      "type": "score",
+      "instructions": "How well does the message explain the motivation for the change, not just what changed?",
+      "criteria": [
+        "No body, or the body restates the subject line.",
+        "Mentions a symptom or ticket but not the underlying cause.",
+        "Explains the cause and why this approach fixes it.",
+        "Explains cause, approach, and trade-offs or alternatives considered."
+      ]
+    },
+    "type": {
+      "type": "choice",
+      "instructions": "Which Conventional Commits type best describes this change based on the content of the message (ignore the prefix the author wrote if it contradicts the body)?",
+      "criteria": {
+        "feat": "A new feature for the user.",
+        "fix": "A bug fix.",
+        "docs": "Documentation only.",
+        "style": "Formatting, whitespace, missing semicolons; no code meaning change.",
+        "refactor": "Code change that neither fixes a bug nor adds a feature.",
+        "perf": "Improves performance.",
+        "test": "Adds or corrects tests.",
+        "build": "Build system or external dependencies.",
+        "ci": "CI configuration and scripts.",
+        "chore": "Other changes that do not modify src or test files."
+      }
+    }
+  },
+  "pair": {
+    "question_id": "explains_why",
+    "expect": "up",
+    "label": "Adding a body explaining the cause should raise explains_why",
+    "state_a": "fix(auth): refresh expired session tokens before retrying API calls\n\nFixes #4821",
+    "state_b": "fix(auth): refresh expired session tokens before retrying API calls\n\nClients with a session older than 24h were getting a 401 on the first request after\nwaking from sleep, because the SDK retried with the stale token. We now check `expires_at`\nbefore each call and refresh proactively when less than 60s remain.\n\nFixes #4821"
+  }
+}

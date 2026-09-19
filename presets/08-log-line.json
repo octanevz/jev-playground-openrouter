@@ -1,0 +1,39 @@
+{
+  "name": "Log line classification",
+  "description": "Judge one log line in the context of its neighbors.",
+  "state": {
+    "line": "2026-09-19T08:14:02Z WARN  payments.refund: refund failed for order 88213 customer=jane.doe@example.com amount=49.00 reason=card_expired; will retry in 1h",
+    "context": [
+      "2026-09-19T08:13:58Z INFO  payments.refund: processing batch 4411 (12 refunds)",
+      "2026-09-19T08:14:00Z INFO  payments.refund: refund ok order=88209 amount=12.50",
+      "2026-09-19T08:14:01Z INFO  payments.refund: refund ok order=88211 amount=8.00",
+      "2026-09-19T08:14:03Z INFO  payments.refund: refund ok order=88215 amount=120.00",
+      "2026-09-19T08:14:05Z INFO  payments.refund: batch 4411 done: 11 ok, 1 failed"
+    ]
+  },
+  "questions": {
+    "log_level_should_be": {
+      "type": "choice",
+      "instructions": "Judging only `line` (use `context` for background), what log level should this message have been emitted at?",
+      "criteria": {
+        "DEBUG": "Diagnostic detail useful only when investigating.",
+        "INFO": "Normal operation worth recording.",
+        "WARN": "Something unexpected but handled; no immediate action required.",
+        "ERROR": "An operation failed and will not self-heal; someone should look.",
+        "FATAL": "The process cannot continue."
+      }
+    },
+    "contains_pii": {
+      "type": "noul",
+      "instructions": "Does `line` contain personally identifiable information that should not appear in logs?",
+      "criteria": {
+        "true": ["email address", "full name", "phone number", "postal address", "card number", "government id"],
+        "false": "Only opaque ids (order numbers, customer ids as integers/UUIDs), amounts, and technical fields."
+      }
+    },
+    "actionable": {
+      "type": "noul",
+      "instructions": "Does `line` describe something a human needs to act on, as opposed to something the system will handle by itself?"
+    }
+  }
+}

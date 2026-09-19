@@ -1,0 +1,55 @@
+{
+  "name": "Code comment quality",
+  "description": "Judge one code comment (plain-text state: file, context and the annotated code) on two things: is it accurate, and is it useful?",
+  "state": "File: billing/invoice.py (Python)\nComment under review: the one directly above the for-loop in charge().\nContext: the module has no other retry logic; GatewayError carries the HTTP status in .status; the module has no docstrings.\n\ndef charge(invoice, gateway):\n    # Retry up to 3 times because the payments gateway returns 502 for ~1s after a deploy on their side; anything longer is a real outage and should surface to the caller.\n    for attempt in range(3):\n        try:\n            return gateway.charge(invoice.id, invoice.total_cents)\n        except GatewayError as e:\n            if e.status != 502 or attempt == 2:\n                raise\n            time.sleep(0.5)\n",
+  "questions": {
+    "accurate": {
+      "type": "noul",
+      "instructions": "Does the comment under review accurately describe what the code actually does? Compare every claim in the comment (counts, conditions, timing, status codes) against the code.",
+      "criteria": {
+        "true": "Every factual claim in the comment matches the code.",
+        "false": {
+          "covers": "At least one claim contradicts the code.",
+          "examples": [
+            "comment says 3 retries but the loop makes 4 attempts",
+            "comment mentions a status code the code never checks",
+            "comment describes a timeout the code does not implement"
+          ]
+        }
+      }
+    },
+    "useful": {
+      "type": "score",
+      "instructions": "Rate how useful the comment under review is to someone reading this code for the first time. Useful comments explain reasoning, constraints or hazards that the code itself cannot show; comments that restate the code or add noise are not useful.",
+      "criteria": [
+        {
+          "level": "harmful_or_noise",
+          "definition": "Misleads, is stale, or carries no information.",
+          "examples": [
+            "# increment i",
+            "# added by Bob 2019"
+          ]
+        },
+        {
+          "level": "restates_code",
+          "definition": "Says only what the next lines visibly do."
+        },
+        {
+          "level": "helpful",
+          "definition": "Adds real context: the reason for the approach, a constraint, or a hazard."
+        },
+        {
+          "level": "essential",
+          "definition": "Without it a reader would likely misunderstand or 'fix' the code incorrectly; it states both the reason and its limits."
+        }
+      ]
+    }
+  },
+  "pair": {
+    "question_id": "useful",
+    "expect": "up",
+    "label": "Replacing a restating comment with a rationale should raise useful",
+    "state_a": "File: billing/invoice.py (Python)\nComment under review: the one directly above the for-loop in charge().\n\ndef charge(invoice, gateway):\n    # try 3 times, sleep half a second between tries\n    for attempt in range(3):\n        try:\n            return gateway.charge(invoice.id, invoice.total_cents)\n        except GatewayError as e:\n            if e.status != 502 or attempt == 2:\n                raise\n            time.sleep(0.5)\n",
+    "state_b": "File: billing/invoice.py (Python)\nComment under review: the one directly above the for-loop in charge().\n\ndef charge(invoice, gateway):\n    # The gateway returns 502 for about a second after each of their deploys; retry briefly so those don't fail invoices, but let anything longer surface as a real error.\n    for attempt in range(3):\n        try:\n            return gateway.charge(invoice.id, invoice.total_cents)\n        except GatewayError as e:\n            if e.status != 502 or attempt == 2:\n                raise\n            time.sleep(0.5)\n"
+  }
+}
