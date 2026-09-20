@@ -2,7 +2,7 @@
 
 While waiting for my [TypeSafe.ai](https://typesafe.ai) invitation, I discovered that Jev is
 also available through [OpenRouter](https://openrouter.ai). After a bit of experimenting in Python, I asked Claude (Fable) to generate a
-playground app; this is the result. Not quite a single shot, but nice. You need an OpenRouter
+playground app; this is the result. You need an OpenRouter
 API key.
 
 ![Jev Playground screenshot](jev-playground.png)
